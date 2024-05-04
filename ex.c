@@ -4,6 +4,13 @@
 #include <stdlib.h>
 
 pthread_mutex_t print_lock;
+pthread_mutex_t revenue_lock;
+pthread_mutex_t cook_lock;
+pthread_cond_t cook_cond;
+pthread_mutex_t oven_lock;
+pthread_cond_t oven_cond;
+unsigned int seed;
+int revenue;
 //pthread_cond_t  cond;
 
 int Ntel=2; // Recources
@@ -30,19 +37,101 @@ int Tdellow=5; // Delivery times
 int Tdelhigh=15;
 
 void *order(void *x){
-
-    int id = *(int *)x;
 	
+    int id = *(int *)x;
+	/*
 	pthread_mutex_lock(&print_lock);
 	printf("Thread %d is ordering\n", id);
-	pthread_mutex_unlock(&print_lock);
+	pthread_mutex_unlock(&print_lock);*/ 
+	int pizzas_ordered = Norderlow + rand_r(&seed)%(Norderhigh - Norderlow - 1);
+	
+	int margaritas = 0;
+	int pepperoni = 0;
+	int special = 0;
+	int choice;
+	int wait_time;
+	
+	for (int i=0; i<pizzas_ordered; i++){
+		// Select a random number for the precentage and depending on that, order one 
+		// of the 3 options
+		choice = 1 + rand_r(&seed)%100;
+		if (choice <= 35){
+			margaritas++;
+		}
+		else if (choice <= 60){
+			pepperoni++;
+		}
+		else{
+			special++;
+		}
+	}
+	
+	// Wait for payment
+	wait_time = Tpaymentlow + rand_r(&seed)%(Tpaymenthigh - Tpaymentlow - 1);
+	sleep(wait_time);
+	
+	// Payment may fail
+	choice = 1 + rand_r(&seed)%100;
+	if (choice <= 5){
+		pthread_mutex_lock(&print_lock);
+		printf("The transaction of %d has failed...\n", id);
+		pthread_mutex_unlock(&print_lock);
+		pthread_exit(NULL);
+	}
+	else{
+		pthread_mutex_lock(&print_lock);
+		printf("The transaction of %d was successful! PLease wait for your pizzas...\n", id);
+		pthread_mutex_unlock(&print_lock);
+	}
+	
+	// Add the money to the sum
+	pthread_mutex_lock(&revenue_lock);
+	revenue += margaritas*Cm + pepperoni*Cp + special*Cs;
+	pthread_mutex_unlock(&revenue_lock);
+	
+	// Check for available cooks
+	pthread_mutex_lock(&cook_lock);
+	while (Ncook == 0){
+		pthread_cond_wait(&cook_cond, &cook_lock);
+	}
+	Ncook--;
+	pthread_mutex_unlock(&cook_lock);
+	
+	// Prepare pizzas
+	sleep(pizzas_ordered*Tprep);
+	
+	pthread_mutex_lock(&cook_lock);
+	Ncook++;
+	pthread_cond_signal(&cook_cond);
+	pthread_mutex_unlock(&cook_lock);
+	
+	/*
+	// Once you get a cook, look for available ovens
+	pthread_mutex_lock(&oven_lock);
+	while (Noven < pizzas_ordered){
+		pthread_cond_wait(&oven_cond, &oven_lock);
+	}
+	Noven--;
+	// Release cook
+	pthread_mutex_lock(&cook_lock);
+	Ncook++;
+	pthread_cond_signal(&cook_cond);
+	pthread_mutex_unlock(&cook_lock);
+	pthread_mutex_unlock(&oven_lock); 
+	*/
+	// Bake pizzas
+	//sleep(pizzas_ordered*Tbake);
+	
+	// Pretty sure pws prepei na apodesmeutoun oi fournoi afou bre8ei deliveras
+	
+	
 	
 	pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[]){
 	int Ncust = atoi(argv[1]);
-    int seed = atoi(argv[2]);
+    seed = atoi(argv[2]);
 
     int *id = malloc(Ncust * sizeof(int)); // Allocate memory 
     pthread_t *threads = malloc(Ncust * sizeof(pthread_t));
