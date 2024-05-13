@@ -43,6 +43,7 @@ void *order(void *x){
 	pthread_mutex_lock(&print_lock);
 	printf("Thread %d is ordering\n", id);
 	pthread_mutex_unlock(&print_lock);*/ 
+	// Select random number of pizzas within the range [Norderlow, Norderhigh]
 	int pizzas_ordered = Norderlow + rand_r(&seed)%(Norderhigh - Norderlow - 1);
 	
 	int margaritas = 0;
