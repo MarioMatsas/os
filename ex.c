@@ -9,8 +9,12 @@ pthread_mutex_t cook_lock;
 pthread_cond_t cook_cond;
 pthread_mutex_t oven_lock;
 pthread_cond_t oven_cond;
+pthread_mutex_t total_pizzas_lock;
 unsigned int seed;
 int revenue;
+int total_margaritas_sold;
+int total_pepperonis_sold;
+int total_specials_sold;
 //pthread_cond_t  cond;
 
 int Ntel=2; // Recources
@@ -43,7 +47,7 @@ void *order(void *x){
 	pthread_mutex_lock(&print_lock);
 	printf("Thread %d is ordering\n", id);
 	pthread_mutex_unlock(&print_lock);*/ 
-	// Select random number of pizzas within the range [Norderlow, Norderhigh]
+	// Select a random number of pizzas to order
 	int pizzas_ordered = Norderlow + rand_r(&seed)%(Norderhigh - Norderlow - 1);
 	
 	int margaritas = 0;
@@ -90,6 +94,13 @@ void *order(void *x){
 	revenue += margaritas*Cm + pepperoni*Cp + special*Cs;
 	pthread_mutex_unlock(&revenue_lock);
 	
+	// Update the total pizzas sold per kind
+	pthread_mutex_lock(&total_pizzas_lock);
+	total_margaritas_sold += margaritas;
+	total_pepperonis_sold += pepperoni;
+	total_specials_sold += special;
+	pthread_mutex_unlock(&total_pizzas_lock);
+	
 	// Check for available cooks
 	pthread_mutex_lock(&cook_lock);
 	while (Ncook == 0){
@@ -101,11 +112,13 @@ void *order(void *x){
 	// Prepare pizzas
 	sleep(pizzas_ordered*Tprep);
 	
+	// ----- THIS PART IS ONLY FOR TESTING AND WILL BE DELETED! 
 	pthread_mutex_lock(&cook_lock);
 	Ncook++;
 	pthread_cond_signal(&cook_cond);
 	pthread_mutex_unlock(&cook_lock);
 	
+	// ------ THIS PART HERE REQUIRES MORE TO BE DONE IN ORDER TO WORK
 	/*
 	// Once you get a cook, look for available ovens
 	pthread_mutex_lock(&oven_lock);
