@@ -146,6 +146,7 @@ void *order(void *x){
 int main(int argc, char *argv[]){
 	int Ncust = atoi(argv[1]);
     seed = atoi(argv[2]);
+    int rc;
 
     int *id = malloc(Ncust * sizeof(int)); // Allocate memory 
     pthread_t *threads = malloc(Ncust * sizeof(pthread_t));
@@ -154,16 +155,29 @@ int main(int argc, char *argv[]){
 
     for (int i = 0; i < Ncust; i++) {
         id[i] = i+1;
-        printf("Main: Thread %d has been created\n", id[i]);
-        pthread_create(&threads[i], NULL, order, &id[i]);
+        pthread_mutex_lock(&print_lock);
+		printf("Main: Thread %d has been created\n", id[i]);
+		pthread_mutex_unlock(&print_lock);
+        
+        rc = pthread_create(&threads[i], NULL, order, &id[i]);
+        if (rc != 0){ return -1; }
     }
 
-    for (int i = 0; i < Ncust; i++) {
-        printf("Main: Thread %d has been destroyed\n", id[i]);
-        pthread_join(threads[i], NULL);
+    for (int i = 0; i < Ncust; i++) {    
+        rc = pthread_join(threads[i], NULL);
+        
+        if (rc != 0){ return -1; }
+        
+        pthread_mutex_lock(&print_lock);
+		printf("Main: Thread %d has been destroyed\n", id[i]);
+		pthread_mutex_unlock(&print_lock);
     }
 
     pthread_mutex_destroy(&print_lock);
+    pthread_mutex_destroy(&revenue_lock);
+    pthread_mutex_destroy(&cook_lock);
+    pthread_mutex_destroy(&oven_lock);
+    pthread_mutex_destroy(&total_pizzas_lock);
 
     free(id); // Free allocated memory
     free(threads); 
