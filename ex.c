@@ -149,9 +149,12 @@ int main(int argc, char *argv[]){
     int rc;
 
     int *id = malloc(Ncust * sizeof(int)); // Allocate memory 
+    if (id == NULL){ return -1; }
     pthread_t *threads = malloc(Ncust * sizeof(pthread_t));
+    if (threads == NULL){ return -1; }
 
-    pthread_mutex_init(&print_lock, NULL);
+    rc = pthread_mutex_init(&print_lock, NULL);
+    if (rc != 0){ return -1; }
 
     for (int i = 0; i < Ncust; i++) {
         id[i] = i+1;
@@ -172,12 +175,17 @@ int main(int argc, char *argv[]){
 		printf("Main: Thread %d has been destroyed\n", id[i]);
 		pthread_mutex_unlock(&print_lock);
     }
-
-    pthread_mutex_destroy(&print_lock);
-    pthread_mutex_destroy(&revenue_lock);
-    pthread_mutex_destroy(&cook_lock);
-    pthread_mutex_destroy(&oven_lock);
-    pthread_mutex_destroy(&total_pizzas_lock);
+	
+    rc = pthread_mutex_destroy(&print_lock);
+    if (rc != 0){ return -1; }
+    rc = pthread_mutex_destroy(&revenue_lock);
+    if (rc != 0){ return -1; }
+    rc = pthread_mutex_destroy(&cook_lock);
+    if (rc != 0){ return -1; }
+    rc = pthread_mutex_destroy(&oven_lock);
+    if (rc != 0){ return -1; }
+    rc = pthread_mutex_destroy(&total_pizzas_lock);
+    if (rc != 0){ return -1; }
 
     free(id); // Free allocated memory
     free(threads); 
