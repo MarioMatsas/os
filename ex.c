@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "param.h"
 
 pthread_mutex_t print_lock;
 pthread_mutex_t revenue_lock;
@@ -16,29 +17,6 @@ int total_margaritas_sold;
 int total_pepperonis_sold;
 int total_specials_sold;
 //pthread_cond_t  cond;
-
-int Ntel=2; // Recources
-int Ncook=2;
-int Noven=10;
-int Ndeliverer=10;
-int Torderlow=1; 
-int Torderhigh=5;
-int Norderlow=1; // Number of pizzas
-int Norderhigh=5; 
-int Pm=35; // Chances of pizza being a margarita, pepperoni or special
-int Pp=25;
-int Ps=40;
-int Tpaymentlow=1; // Payment time
-int Tpaymenthigh=3;
-int Pfail=5; // Chance of order to fail
-int Cm=10; // Pizza cost according to type of pizza
-int Cp=11;
-int Cs=12;
-int Tprep=1; // Prep, bake and pack time
-int Tbake=10;
-int Tpack=1;
-int Tdellow=5; // Delivery times
-int Tdelhigh=15;
 
 void *order(void *x){
 	
