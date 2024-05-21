@@ -27,7 +27,7 @@ int T_cooling_sum;
 //pthread_cond_t  cond;
 
 int N_cooks = Ncook; // TODO: modify rest similarly
-
+int N_dispatch = Ndeliverer;
 void *order(void *x){
 	
     int id = *(int *)x;
@@ -141,7 +141,7 @@ void *order(void *x){
 	sleep(del_time);
 	clock_gettime(CLOCK_REALTIME, &finish);
 	// ignoring nanoseconds (considering we would potentially need to normalize them and assuming no need for such accuracy)
-	int T_cooling_time_sec = end.tv_sec - start.tv_sec; 
+	int T_cooling_time_sec = finish.tv_sec - start.tv_sec; 
 	pthread_mutex_lock(&print_lock);
 		printf("Η παραγγελία με αριθμό %d παραδόθηκε σε %d λεπτά. \n", id, del_time);
 	pthread_mutex_unlock(&print_lock);
