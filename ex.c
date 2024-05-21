@@ -19,6 +19,11 @@ int total_margaritas_sold;
 int total_pepperonis_sold;
 int total_specials_sold;
 
+pthread_mutex_t T_cooling_lock;
+int T_cooling_max;
+int T_cooling_N;
+int T_cooling_sum;
+
 //pthread_cond_t  cond;
 
 int N_cooks = Ncook; // TODO: modify rest similarly
@@ -118,21 +123,33 @@ void *order(void *x){
 	*/
 	// Bake pizzas
 	//sleep(pizzas_ordered*Tbake);
+	// struct timespec start, finish; // needed for printing end stats, added by ppdms, don't remove if refactoring
+	// clock_gettime(CLOCK_REALTIME, &start); // same as above
 	
 	// Pretty sure pws prepei na apodesmeutoun oi fournoi afou bre8ei deliveras
 
 	// BEGIN DISPATCH
-	/*
 	// Check for available dispatchers
-	pthread_mutex_lock(&dispatch_lock_lock);
-	while (N_dispatch == 0){
-		pthread_cond_wait(&dispatch_cond, &dispatch_lock);
-	}
-	N_dispatch--;
+	pthread_mutex_lock(&dispatch_lock);
+		while (N_dispatch == 0){
+			pthread_cond_wait(&dispatch_cond, &dispatch_lock);
+		}
+		N_dispatch--;
 	pthread_mutex_unlock(&dispatch_lock);
-	*/
-	
-	
+	pthread_cond_signal(&dispatch_cond);
+	int del_time = pizzas_ordered*Tpack + ( Tdellow + ( ( 2 * rand_r(&seed) * (Tdelhigh-Tdellow) ) / RAND_MAX ) );
+	sleep(del_time);
+	clock_gettime(CLOCK_REALTIME, &finish);
+	// ignoring nanoseconds (considering we would potentially need to normalize them and assuming no need for such accuracy)
+	int T_cooling_time_sec = end.tv_sec - start.tv_sec; 
+	pthread_mutex_lock(&print_lock);
+		printf("Η παραγγελία με αριθμό %d παραδόθηκε σε %d λεπτά. \n", id, del_time);
+	pthread_mutex_unlock(&print_lock);
+	pthread_mutex_lock(&T_cooling_lock);
+		T_cooling_sum += T_cooling_time_sec;
+		T_cooling_N += 1;
+		if (del_time > T_cooling_max) T_cooling_max = del_time;
+	pthread_mutex_unlock(&T_cooling_lock);	
 	pthread_exit(NULL);
 }
 
@@ -179,9 +196,14 @@ int main(int argc, char *argv[]){
     if (rc != 0){ return -1; }
     rc = pthread_mutex_destroy(&total_pizzas_lock);
     if (rc != 0){ return -1; }
+	rc = pthread_mutex_destroy(&T_cooling_lock);
+    if (rc != 0){ return -1; }
 
     free(id); // Free allocated memory
     free(threads); 
 
+	// print stats here: single-threaded, no worrying about mutexes
+	printf("Mέσος χρόνος κρυώματος των παραγγελιών: %f λεπτά\n", T_cooling_sum / T_cooling_N);
+	printf("Mέσος χρόνος κρυώματος των παραγγελιών: %f λεπτά\n", T_cooling_max);
     return 0;
 }
