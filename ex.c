@@ -126,14 +126,15 @@ void *order(void *x){
 	// struct timespec start, finish; // needed for printing end stats, added by ppdms, don't remove if refactoring
 	// clock_gettime(CLOCK_REALTIME, &start); // same as above
 	
-	// Pretty sure pws prepei na apodesmeutoun oi fournoi afou bre8ei deliveras
-
 	// BEGIN DISPATCH
 	// Check for available dispatchers
 	pthread_mutex_lock(&dispatch_lock);
 		while (N_dispatch == 0){
 			pthread_cond_wait(&dispatch_cond, &dispatch_lock);
 		}
+		pthread_mutex_lock(&oven_lock);
+			Noven += pizzas_ordered;
+		pthread_mutex_unlock(&oven_lock);
 		N_dispatch--;
 	pthread_mutex_unlock(&dispatch_lock);
 	pthread_cond_signal(&dispatch_cond);
