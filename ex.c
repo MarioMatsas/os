@@ -13,11 +13,14 @@ pthread_cond_t oven_cond;
 pthread_mutex_t dispatch_lock;
 pthread_cond_t dispatch_cond;
 pthread_mutex_t total_pizzas_lock;
+pthread_mutex_t success_lock;
 unsigned int seed;
 int revenue;
 int total_margaritas_sold;
 int total_pepperonis_sold;
 int total_specials_sold;
+int successful;
+int unsuccessful;
 
 pthread_mutex_t T_cooling_lock;
 int T_cooling_max;
@@ -66,12 +69,18 @@ void *order(void *x){
 	// Payment may fail
 	choice = 1 + rand_r(&seed)%100;
 	if (choice <= 5){
+		pthread_mutex_lock(&success_lock);
+		unsuccessful++;
+		pthread_mutex_unlock(&success_lock);
 		pthread_mutex_lock(&print_lock);
 		printf("The transaction of %d has failed...\n", id);
 		pthread_mutex_unlock(&print_lock);
 		pthread_exit(NULL);
 	}
 	else{
+		pthread_mutex_lock(&success_lock);
+		successful++;
+		pthread_mutex_unlock(&success_lock);
 		pthread_mutex_lock(&print_lock);
 		printf("The transaction of %d was successful! PLease wait for your pizzas...\n", id);
 		pthread_mutex_unlock(&print_lock);
@@ -197,6 +206,8 @@ int main(int argc, char *argv[]){
     if (rc != 0){ return -1; }
     rc = pthread_mutex_destroy(&total_pizzas_lock);
     if (rc != 0){ return -1; }
+	rc = pthread_mutex_destroy(&success_lock);
+    if (rc != 0){ return -1; }
 	rc = pthread_mutex_destroy(&T_cooling_lock);
     if (rc != 0){ return -1; }
 
@@ -204,6 +215,12 @@ int main(int argc, char *argv[]){
     free(threads); 
 
 	// print stats here: single-threaded, no worrying about mutexes
+	printf("Total revenue: %d\n", revenue);
+    printf("Margaritas: %d\n", total_margaritas_sold);
+    printf("Pepperonis: %d\n", total_pepperonis_sold);
+    printf("Specials: %d\n", total_specials_sold);
+    printf("Successful orders: %d\n", successful);
+    printf("Unsuccessful orders: %d\n", unsuccessful);
 	printf("Mέσος χρόνος κρυώματος των παραγγελιών: %f λεπτά\n", T_cooling_sum / T_cooling_N);
 	printf("Mέσος χρόνος κρυώματος των παραγγελιών: %f λεπτά\n", T_cooling_max);
     return 0;
