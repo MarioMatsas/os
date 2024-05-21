@@ -10,13 +10,18 @@ pthread_mutex_t cook_lock;
 pthread_cond_t cook_cond;
 pthread_mutex_t oven_lock;
 pthread_cond_t oven_cond;
+pthread_mutex_t dispatch_lock;
+pthread_cond_t dispatch_cond;
 pthread_mutex_t total_pizzas_lock;
 unsigned int seed;
 int revenue;
 int total_margaritas_sold;
 int total_pepperonis_sold;
 int total_specials_sold;
+
 //pthread_cond_t  cond;
+
+int N_cooks = Ncook; // TODO: modify rest similarly
 
 void *order(void *x){
 	
@@ -81,10 +86,10 @@ void *order(void *x){
 	
 	// Check for available cooks
 	pthread_mutex_lock(&cook_lock);
-	while (Ncook == 0){
+	while (N_cooks == 0){
 		pthread_cond_wait(&cook_cond, &cook_lock);
 	}
-	Ncook--;
+	N_cooks--;
 	pthread_mutex_unlock(&cook_lock);
 	
 	// Prepare pizzas
@@ -92,7 +97,7 @@ void *order(void *x){
 	
 	// ----- THIS PART IS ONLY FOR TESTING AND WILL BE DELETED! 
 	pthread_mutex_lock(&cook_lock);
-	Ncook++;
+	N_cooks++;
 	pthread_cond_signal(&cook_cond);
 	pthread_mutex_unlock(&cook_lock);
 	
@@ -106,7 +111,7 @@ void *order(void *x){
 	Noven--;
 	// Release cook
 	pthread_mutex_lock(&cook_lock);
-	Ncook++;
+	N_cooks++;
 	pthread_cond_signal(&cook_cond);
 	pthread_mutex_unlock(&cook_lock);
 	pthread_mutex_unlock(&oven_lock); 
@@ -115,6 +120,15 @@ void *order(void *x){
 	//sleep(pizzas_ordered*Tbake);
 	
 	// Pretty sure pws prepei na apodesmeutoun oi fournoi afou bre8ei deliveras
+
+	// BEGIN DISPATCH
+	// Check for available dispatchers
+	pthread_mutex_lock(&dispatch_lock_lock);
+	while (N_cooks == 0){
+		pthread_cond_wait(&cook_cond, &cook_lock);
+	}
+	N_cooks--;
+	pthread_mutex_unlock(&cook_lock);
 	
 	
 	
@@ -124,7 +138,7 @@ void *order(void *x){
 int main(int argc, char *argv[]){
 	int Ncust = atoi(argv[1]);
     seed = atoi(argv[2]);
-    int rc;
+    int rc; // return code
 
     int *id = malloc(Ncust * sizeof(int)); // Allocate memory 
     if (id == NULL){ return -1; }
