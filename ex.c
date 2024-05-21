@@ -113,7 +113,7 @@ void *order(void *x){
 	while (Noven < pizzas_ordered){
 		pthread_cond_wait(&oven_cond, &oven_lock);
 	}
-	Noven--;
+	Noven -= pizzas_ordered;
 	// Release cook
 	pthread_mutex_lock(&cook_lock);
 	N_cooks++;
