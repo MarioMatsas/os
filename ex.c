@@ -122,14 +122,15 @@ void *order(void *x){
 	// Pretty sure pws prepei na apodesmeutoun oi fournoi afou bre8ei deliveras
 
 	// BEGIN DISPATCH
+	/*
 	// Check for available dispatchers
 	pthread_mutex_lock(&dispatch_lock_lock);
-	while (N_cooks == 0){
-		pthread_cond_wait(&cook_cond, &cook_lock);
+	while (N_dispatch == 0){
+		pthread_cond_wait(&dispatch_cond, &dispatch_lock);
 	}
-	N_cooks--;
-	pthread_mutex_unlock(&cook_lock);
-	
+	N_dispatch--;
+	pthread_mutex_unlock(&dispatch_lock);
+	*/
 	
 	
 	pthread_exit(NULL);
