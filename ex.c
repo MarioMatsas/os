@@ -1,7 +1,8 @@
 #include <pthread.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <unistd.h>
+
 #include "param.h"
 
 pthread_mutex_t print_lock;
@@ -26,21 +27,15 @@ pthread_mutex_t T_cooling_lock;
 float T_cooling_max;
 int T_cooling_N;
 float T_cooling_sum;
-//pthread_cond_t  cond;
 
-int N_cooks = Ncook; // TODO: modify rest similarly
+int N_cooks = Ncook;  // TODO: modify rest similarly
 int N_oven = Noven;
 int N_dispatch = Ndeliverer;
 
-void *order(void *x){
-	
+void *order(void *x) {
     int id = *(int *)x;
-    /*
-	pthread_mutex_lock(&print_lock);
-	printf("Thread %d is ordering\n", id);
-	pthread_mutex_unlock(&print_lock);*/ 
-	// Select a random number of pizzas to order
-	int pizzas_ordered = Norderlow + rand_r(&seed)%(Norderhigh - Norderlow - 1);
+    int pizzas_ordered =
+        Norderlow + rand_r(&seed) % (Norderhigh - Norderlow + 1);
 
     int margaritas = 0;
     int pepperoni = 0;
@@ -48,28 +43,22 @@ void *order(void *x){
     int choice;
     int wait_time;
 
-    for (int i=0; i<pizzas_ordered; i++){
-		// Select a random number for the precentage and depending on that, order one 
-		// of the 3 options
-		choice = 1 + rand_r(&seed)%100;
-        if (choice <= 35){
+    for (int i = 0; i < pizzas_ordered; i++) {
+        choice = rand_r(&seed) % 100 + 1;
+        if (choice <= 35) {
             margaritas++;
-        }
-		else if (choice <= 60){
+        } else if (choice <= 60) {
             pepperoni++;
-        }
-		else{
+        } else {
             special++;
         }
     }
 
-    // Wait for payment
-	wait_time = Tpaymentlow + rand_r(&seed)%(Tpaymenthigh - Tpaymentlow - 1);
+    wait_time = Tpaymentlow + rand_r(&seed) % (Tpaymenthigh - Tpaymentlow + 1);
     sleep(wait_time);
 
-    // Payment may fail
-	choice = 1 + rand_r(&seed)%100;
-    if (choice <= 5){
+    choice = rand_r(&seed) % 100 + 1;
+    if (choice <= 5) {
         pthread_mutex_lock(&success_lock);
         unsuccessful++;
         pthread_mutex_unlock(&success_lock);
@@ -77,42 +66,41 @@ void *order(void *x){
         printf("The transaction of %d has failed...\n", id);
         pthread_mutex_unlock(&print_lock);
         pthread_exit(NULL);
-    }
-	else{
+    } else {
         pthread_mutex_lock(&success_lock);
         successful++;
         pthread_mutex_unlock(&success_lock);
         pthread_mutex_lock(&print_lock);
-        printf("The transaction of %d was successful! Please wait for your pizzas...\n", id);
+        printf(
+            "The transaction of %d was successful! Please wait for your "
+            "pizzas...\n",
+            id);
         pthread_mutex_unlock(&print_lock);
     }
 
-// Add the money to the sum
     pthread_mutex_lock(&revenue_lock);
-    revenue += margaritas*Cm + pepperoni*Cp + special*Cs;
+    revenue += margaritas * Cm + pepperoni * Cp + special * Cs;
     pthread_mutex_unlock(&revenue_lock);
 
-// Update the total pizzas sold per kind
     pthread_mutex_lock(&total_pizzas_lock);
     total_margaritas_sold += margaritas;
     total_pepperonis_sold += pepperoni;
     total_specials_sold += special;
     pthread_mutex_unlock(&total_pizzas_lock);
 
-// Check for available cooks
     pthread_mutex_lock(&cook_lock);
-    while (N_cooks == 0){
+    while (N_cooks == 0) {
         pthread_cond_wait(&cook_cond, &cook_lock);
     }
     N_cooks--;
     pthread_mutex_unlock(&cook_lock);
 
     // Prepare pizzas
-	sleep(pizzas_ordered*Tprep);
+    sleep(pizzas_ordered * Tprep);
 
-// Once you get a cook, look for available ovens
+    // Once you get a cook, look for available ovens
     pthread_mutex_lock(&oven_lock);
-    while (N_oven < pizzas_ordered){
+    while (N_oven < pizzas_ordered) {
         pthread_cond_wait(&oven_cond, &oven_lock);
     }
     N_oven -= pizzas_ordered;
@@ -122,54 +110,69 @@ void *order(void *x){
     N_cooks++;
     pthread_cond_signal(&cook_cond);
     pthread_mutex_unlock(&cook_lock);
-pthread_mutex_unlock(&oven_lock); 
-	
-	// Bake pizzas
-    sleep(pizzas_ordered*Tbake);
-    struct timespec start, finish; // needed for printing end stats, added by ppdms, don't remove if refactoring
-    clock_gettime(CLOCK_REALTIME, &start); // same as above
-	
-	// BEGIN DISPATCH
-	// Check for available dispatchers
+    pthread_mutex_unlock(&oven_lock);
+
+    // Bake pizzas
+    sleep(pizzas_ordered * Tbake);
+    struct timespec start, finish;  // needed for printing end stats, added by
+                                    // ppdms, don't remove if refactoring
+    clock_gettime(CLOCK_REALTIME, &start);  // same as above
+
+    // BEGIN DISPATCH
+    // Check for available dispatchers
     pthread_mutex_lock(&dispatch_lock);
-    while (N_dispatch == 0){
+    while (N_dispatch == 0) {
         pthread_cond_wait(&dispatch_cond, &dispatch_lock);
     }
-        pthread_mutex_lock(&oven_lock);
+    N_dispatch--;
+    pthread_mutex_unlock(&dispatch_lock);
+
+    pthread_mutex_lock(&oven_lock);
     N_oven += pizzas_ordered;
     pthread_cond_signal(&oven_cond);
     pthread_mutex_unlock(&oven_lock);
-N_dispatch--;
-	pthread_mutex_unlock(&dispatch_lock);
-	pthread_cond_signal(&dispatch_cond);
-    int del_time = pizzas_ordered*Tpack + ( Tdellow + ( ( 2 * rand_r(&seed) * (Tdelhigh-Tdellow) ) / RAND_MAX ) );
+
+    int del_time =
+        pizzas_ordered * Tpack +
+        (Tdellow + ((2 * rand_r(&seed) * (Tdelhigh - Tdellow)) / RAND_MAX));
     sleep(del_time);
     clock_gettime(CLOCK_REALTIME, &finish);
-// ignoring nanoseconds (considering we would potentially need to normalize them and assuming no need for such accuracy)
+    // ignoring nanoseconds (considering we would potentially need to normalize
+    // them and assuming no need for such accuracy)
     float T_cooling_time_sec = finish.tv_sec - start.tv_sec;
+
     pthread_mutex_lock(&print_lock);
-    printf("Η παραγγελία με αριθμό %d παραδόθηκε σε %d λεπτά. \n", id, del_time);
+    printf("Η παραγγελία με αριθμό %d παραδόθηκε σε %d λεπτά. \n", id,
+           del_time);
     pthread_mutex_unlock(&print_lock);
+
     pthread_mutex_lock(&T_cooling_lock);
     T_cooling_sum += T_cooling_time_sec;
     T_cooling_N++;
     if (del_time > T_cooling_max) T_cooling_max = del_time;
     pthread_mutex_unlock(&T_cooling_lock);
 
+    pthread_mutex_lock(&dispatch_lock);
+    N_dispatch++;
+    pthread_cond_signal(&dispatch_cond);
+    pthread_mutex_unlock(&dispatch_lock);
+
     pthread_exit(NULL);
 }
 
-int main(int argc, char *argv[]){
-    if (argc != 3){
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
         printf("Wrong number of arguments\n");
         return -1;
     }
     int Ncust = atoi(argv[1]);
     seed = atoi(argv[2]);
-    int rc; // return code
+    int rc;  // return code
 
-    int *id = malloc(Ncust * sizeof(int)); // Allocate memory
-    if (id == NULL){ return -1; }
+    int *id = malloc(Ncust * sizeof(int));  // Allocate memory
+    if (id == NULL) {
+        return -1;
+    }
     pthread_t *threads = malloc(Ncust * sizeof(pthread_t));
     if (threads == NULL) {
         return -1;
@@ -188,19 +191,22 @@ int main(int argc, char *argv[]){
     pthread_mutex_init(&T_cooling_lock, NULL);
 
     for (int i = 0; i < Ncust; i++) {
-        id[i] = i+1;
+        id[i] = i + 1;
         pthread_mutex_lock(&print_lock);
         printf("Main: Thread %d has been created\n", id[i]);
         pthread_mutex_unlock(&print_lock);
 
         rc = pthread_create(&threads[i], NULL, order, &id[i]);
-        if (rc != 0){ return -1; }
+        if (rc != 0) {
+            return -1;
+        }
     }
 
     for (int i = 0; i < Ncust; i++) {
         rc = pthread_join(threads[i], NULL);
-        
-        if (rc != 0){ return -1; }
+        if (rc != 0) {
+            return -1;
+        }
 
         pthread_mutex_lock(&print_lock);
         printf("Main: Thread %d has been destroyed\n", id[i]);
@@ -219,7 +225,7 @@ int main(int argc, char *argv[]){
     pthread_mutex_destroy(&success_lock);
     pthread_mutex_destroy(&T_cooling_lock);
 
-    free(id); // Free allocated memory
+    free(id);  // Free allocated memory
     free(threads);
 
     printf("Total revenue: %d\n", revenue);
