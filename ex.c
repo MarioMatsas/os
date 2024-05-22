@@ -23,14 +23,16 @@ int successful;
 int unsuccessful;
 
 pthread_mutex_t T_cooling_lock;
-int T_cooling_max;
+float T_cooling_max;
 int T_cooling_N;
-int T_cooling_sum;
-
+float T_cooling_sum;
+struct timespec start, finish;
 //pthread_cond_t  cond;
 
 int N_cooks = Ncook; // TODO: modify rest similarly
+int N_oven = Noven;
 int N_dispatch = Ndeliverer;
+
 void *order(void *x){
 	
     int id = *(int *)x;
@@ -110,26 +112,26 @@ void *order(void *x){
 	sleep(pizzas_ordered*Tprep);
 	
 	// ----- THIS PART IS ONLY FOR TESTING AND WILL BE DELETED! 
-	pthread_mutex_lock(&cook_lock);
-	N_cooks++;
-	pthread_cond_signal(&cook_cond);
-	pthread_mutex_unlock(&cook_lock);
+	//pthread_mutex_lock(&cook_lock);
+	//N_cooks++;
+	//pthread_cond_signal(&cook_cond);
+	//pthread_mutex_unlock(&cook_lock);
 	
 	// ------ THIS PART HERE REQUIRES MORE TO BE DONE IN ORDER TO WORK
-	/*
+	
 	// Once you get a cook, look for available ovens
 	pthread_mutex_lock(&oven_lock);
-	while (Noven < pizzas_ordered){
+	while (N_oven < pizzas_ordered){
 		pthread_cond_wait(&oven_cond, &oven_lock);
 	}
-	Noven -= pizzas_ordered;
+	N_oven -= pizzas_ordered;
 	// Release cook
 	pthread_mutex_lock(&cook_lock);
 	N_cooks++;
 	pthread_cond_signal(&cook_cond);
 	pthread_mutex_unlock(&cook_lock);
 	pthread_mutex_unlock(&oven_lock); 
-	*/
+	
 	// Bake pizzas
 	//sleep(pizzas_ordered*Tbake);
 	// struct timespec start, finish; // needed for printing end stats, added by ppdms, don't remove if refactoring
@@ -142,7 +144,7 @@ void *order(void *x){
 			pthread_cond_wait(&dispatch_cond, &dispatch_lock);
 		}
 		pthread_mutex_lock(&oven_lock);
-			Noven += pizzas_ordered;
+			N_oven += pizzas_ordered;
 		pthread_mutex_unlock(&oven_lock);
 		N_dispatch--;
 	pthread_mutex_unlock(&dispatch_lock);
@@ -160,6 +162,7 @@ void *order(void *x){
 		T_cooling_N += 1;
 		if (del_time > T_cooling_max) T_cooling_max = del_time;
 	pthread_mutex_unlock(&T_cooling_lock);	
+	
 	pthread_exit(NULL);
 }
 
@@ -222,6 +225,6 @@ int main(int argc, char *argv[]){
     printf("Successful orders: %d\n", successful);
     printf("Unsuccessful orders: %d\n", unsuccessful);
 	printf("Mέσος χρόνος κρυώματος των παραγγελιών: %f λεπτά\n", T_cooling_sum / T_cooling_N);
-	printf("Mέσος χρόνος κρυώματος των παραγγελιών: %f λεπτά\n", T_cooling_max);
+	printf("Μέγιστος χρόνος κρυώματος των παραγγελιών: %f λεπτά\n", T_cooling_max);
     return 0;
 }
