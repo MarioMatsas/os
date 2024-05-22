@@ -26,7 +26,6 @@ pthread_mutex_t T_cooling_lock;
 float T_cooling_max;
 int T_cooling_N;
 float T_cooling_sum;
-struct timespec start, finish;
 //pthread_cond_t  cond;
 
 int N_cooks = Ncook; // TODO: modify rest similarly
@@ -134,8 +133,8 @@ void *order(void *x){
 	
 	// Bake pizzas
 	//sleep(pizzas_ordered*Tbake);
-	// struct timespec start, finish; // needed for printing end stats, added by ppdms, don't remove if refactoring
-	// clock_gettime(CLOCK_REALTIME, &start); // same as above
+	struct timespec start, finish; // needed for printing end stats, added by ppdms, don't remove if refactoring
+	clock_gettime(CLOCK_REALTIME, &start); // same as above
 	
 	// BEGIN DISPATCH
 	// Check for available dispatchers
