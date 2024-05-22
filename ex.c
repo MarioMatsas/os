@@ -167,6 +167,10 @@ void *order(void *x){
 }
 
 int main(int argc, char *argv[]){
+	if (argc != 3){
+		printf("Wrong number of arguments\n");
+		return -1;
+	}
 	int Ncust = atoi(argv[1]);
     seed = atoi(argv[2]);
     int rc; // return code
