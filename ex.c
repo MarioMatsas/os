@@ -83,7 +83,7 @@ void *order(void *x){
 		successful++;
 		pthread_mutex_unlock(&success_lock);
 		pthread_mutex_lock(&print_lock);
-		printf("The transaction of %d was successful! PLease wait for your pizzas...\n", id);
+		printf("The transaction of %d was successful! Please wait for your pizzas...\n", id);
 		pthread_mutex_unlock(&print_lock);
 	}
 	
@@ -109,15 +109,7 @@ void *order(void *x){
 	
 	// Prepare pizzas
 	sleep(pizzas_ordered*Tprep);
-	
-	// ----- THIS PART IS ONLY FOR TESTING AND WILL BE DELETED! 
-	//pthread_mutex_lock(&cook_lock);
-	//N_cooks++;
-	//pthread_cond_signal(&cook_cond);
-	//pthread_mutex_unlock(&cook_lock);
-	
-	// ------ THIS PART HERE REQUIRES MORE TO BE DONE IN ORDER TO WORK
-	
+		
 	// Once you get a cook, look for available ovens
 	pthread_mutex_lock(&oven_lock);
 	while (N_oven < pizzas_ordered){
@@ -132,7 +124,7 @@ void *order(void *x){
 	pthread_mutex_unlock(&oven_lock); 
 	
 	// Bake pizzas
-	//sleep(pizzas_ordered*Tbake);
+	sleep(pizzas_ordered*Tbake);
 	struct timespec start, finish; // needed for printing end stats, added by ppdms, don't remove if refactoring
 	clock_gettime(CLOCK_REALTIME, &start); // same as above
 	
@@ -152,7 +144,7 @@ void *order(void *x){
 	sleep(del_time);
 	clock_gettime(CLOCK_REALTIME, &finish);
 	// ignoring nanoseconds (considering we would potentially need to normalize them and assuming no need for such accuracy)
-	int T_cooling_time_sec = finish.tv_sec - start.tv_sec; 
+	float T_cooling_time_sec = finish.tv_sec - start.tv_sec; 
 	pthread_mutex_lock(&print_lock);
 		printf("Η παραγγελία με αριθμό %d παραδόθηκε σε %d λεπτά. \n", id, del_time);
 	pthread_mutex_unlock(&print_lock);
