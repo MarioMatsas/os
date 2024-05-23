@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "param.h"
+#include "p3220120-p3220150-p3220227-pizza.h"
 
 pthread_mutex_t tel_lock;
 pthread_cond_t tel_cond;
@@ -43,11 +43,15 @@ int N_cooks = Ncook;  // TODO: modify rest similarly
 int N_oven = Noven;
 int N_dispatch = Ndeliverer;
 
+//jim addition-------------------
 int N_tels = Ntel;
+int s = 0; //μεταβλητή, χρήσιμη για να μας πεί αν είμαστε στην χρονική στιγμή 0 (0) ή κάποια άλλη (>0)
+//-------------------------------
 
 void *order(void *x){
 
 //jim's addition---------------------------
+	int wait_time;
     struct timespec start_s, finish_s;//to calculate the serving time
     struct timespec start_r, finish_r;//to calculate the ready time
 //-----------------------------------------	
@@ -67,7 +71,7 @@ void *order(void *x){
 	
 	pthread_mutex_lock(&tel_lock);
 	if(s == 0){
-		s+=1;
+		s += 1;
 	}
 	else{
 		wait_time = Torderlow + rand_r(&seed)%(Torderhigh - Torderlow - 1);
@@ -81,7 +85,7 @@ void *order(void *x){
 	while (N_tels == 0){
 		pthread_cond_wait(&tel_cond, &tel_lock);
 	}
-	N_tel--;
+	N_tels--;
 	pthread_mutex_unlock(&tel_lock);
 	
 	//-------------------------------------
@@ -93,7 +97,7 @@ void *order(void *x){
     int pepperoni = 0;
     int special = 0;
     int choice;
-    int wait_time;
+    //int wait_time;
 
     for (int i = 0; i < pizzas_ordered; i++) {
         choice = rand_r(&seed) % 100 + 1;
@@ -195,6 +199,11 @@ void *order(void *x){
 
 	//calculating the ready_time--------------------
 	int ready_time = finish_r.tv_sec - start_r.tv_sec;
+	
+	pthread_mutex_lock(&print_lock);
+    printf("Η παραγγελία με αριθμό %d ετοιμάστηκε σε %d λεπτά. \n", id,
+           ready_time);
+    pthread_mutex_unlock(&print_lock);
 	//-----------------------------------------------------
 
     int del_time =
@@ -267,9 +276,6 @@ int main(int argc, char *argv[]) {
     pthread_mutex_init(&success_lock, NULL);
     pthread_mutex_init(&T_cooling_lock, NULL);
 
-//jim addition-------------------
-	int s = 0; //μεταβλητή, χρήσιμη για να μας πεί αν είμαστε στην χρονική στιγμή 0 (0) ή κάποια άλλη (>0)
-//-------------------------------
 
     for (int i = 0; i < Ncust; i++) {
         id[i] = i + 1;
