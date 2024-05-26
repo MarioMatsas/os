@@ -69,15 +69,15 @@ void *order(void *x){
 	
 	// Wait for ordering, only after the zero seconds
 	
-	pthread_mutex_lock(&tel_lock);
-	if(s == 0){
+	//pthread_mutex_lock(&tel_lock);
+	if(!s){
 		s += 1;
 	}
 	else{
 		wait_time = Torderlow + rand_r(&seed)%(Torderhigh - Torderlow - 1);
 		sleep(wait_time);
 	}
-	pthread_mutex_unlock(&tel_lock);
+	//pthread_mutex_unlock(&tel_lock);
 	
 	
 	// Check for available telephones, else wait
@@ -143,6 +143,13 @@ void *order(void *x){
     total_pepperonis_sold += pepperoni;
     total_specials_sold += special;
     pthread_mutex_unlock(&total_pizzas_lock);
+    
+    //end of telephone----------------
+    pthread_mutex_lock(&tel_lock);
+    N_tels++;
+    pthread_cond_signal(&tel_cond);
+    pthread_mutex_unlock(&tel_lock);
+    //--------------------------------
 
 	//begin order---------------------
 	clock_gettime(CLOCK_REALTIME, &start_r);
