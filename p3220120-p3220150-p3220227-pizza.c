@@ -69,7 +69,7 @@ void *order(void *x){
 	
 	// Wait for ordering, only after the zero seconds
 	
-	//pthread_mutex_lock(&tel_lock);
+	pthread_mutex_lock(&tel_lock);
 	if(!s){
 		s += 1;
 	}
@@ -77,7 +77,7 @@ void *order(void *x){
 		wait_time = Torderlow + rand_r(&seed)%(Torderhigh - Torderlow - 1);
 		sleep(wait_time);
 	}
-	//pthread_mutex_unlock(&tel_lock);
+	pthread_mutex_unlock(&tel_lock);
 	
 	
 	// Check for available telephones, else wait
