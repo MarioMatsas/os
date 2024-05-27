@@ -213,10 +213,9 @@ void *order(void *x){
     pthread_mutex_unlock(&print_lock);
 	//-----------------------------------------------------
 
-    int del_time =
-        pizzas_ordered * Tpack +
-        (Tdellow + ((2 * rand_r(&seed) * (Tdelhigh - Tdellow)) / RAND_MAX));
-    sleep(del_time);
+    int del_time = Tdellow + ((rand_r(&seed) * (Tdelhigh - Tdellow)) / RAND_MAX);
+    int sleep_time = pizzas_ordered * Tpack + 2*del_time;
+    sleep(sleep_time);
     clock_gettime(CLOCK_REALTIME, &finish);
     // ignoring nanoseconds (considering we would potentially need to normalize
     // them and assuming no need for such accuracy)
