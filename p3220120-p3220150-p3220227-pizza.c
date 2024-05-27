@@ -214,9 +214,12 @@ void *order(void *x){
 	//-----------------------------------------------------
 
     int del_time = Tdellow + ((rand_r(&seed) * (Tdelhigh - Tdellow)) / RAND_MAX);
-    int sleep_time = pizzas_ordered * Tpack + 2*del_time;
-    sleep(sleep_time);
+    int pack_time = pizzas_ordered * Tpack;
+    sleep(pack_time);
+
+    sleep(del_time);
     clock_gettime(CLOCK_REALTIME, &finish);
+    sleep(del_time);
     // ignoring nanoseconds (considering we would potentially need to normalize
     // them and assuming no need for such accuracy)
     float T_cooling_time_sec = finish.tv_sec - start.tv_sec;
