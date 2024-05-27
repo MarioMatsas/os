@@ -52,13 +52,13 @@ void *order(void *x){
 
 //jim's addition---------------------------
 	int wait_time;
-    struct timespec start_s, finish_s;//to calculate the serving time
-    struct timespec start_r, finish_r;//to calculate the ready time
+	//NOTE: start_s and finish_s are not needed, because start_s is the same as start_r and finish_s is the same as finish (will be defined later)
+	struct timespec start_r, finish_r;//to calculate the ready time
 //-----------------------------------------	
     int id = *(int *)x;
     
     //---------------------------------------
-    clock_gettime(CLOCK_REALTIME, &start_s);//for serving time
+	clock_gettime(CLOCK_REALTIME, &start_r);//for ready time
     //---------------------------------------
 	
 	//tel part (jim part)------------------
@@ -151,10 +151,6 @@ void *order(void *x){
     pthread_mutex_unlock(&tel_lock);
     //--------------------------------
 
-	//begin order---------------------
-	clock_gettime(CLOCK_REALTIME, &start_r);
-	//--------------------------------
-
     pthread_mutex_lock(&cook_lock);
     while (N_cooks == 0) {
         pthread_cond_wait(&cook_cond, &cook_lock);
@@ -199,12 +195,15 @@ void *order(void *x){
     N_oven += pizzas_ordered;
     pthread_cond_signal(&oven_cond);
     pthread_mutex_unlock(&oven_lock);
+
+    int del_time = Tdellow + ((rand_r(&seed) * (Tdelhigh - Tdellow)) / RAND_MAX);
+    int pack_time = pizzas_ordered * Tpack;
+    sleep(pack_time);
     
     //order is ready-----------------------------------
     clock_gettime(CLOCK_REALTIME, &finish_r);
     //-------------------------------------------------
-
-	//calculating the ready_time--------------------
+    //calculating the ready_time--------------------
 	int ready_time = finish_r.tv_sec - start_r.tv_sec;
 	
 	pthread_mutex_lock(&print_lock);
@@ -213,13 +212,15 @@ void *order(void *x){
     pthread_mutex_unlock(&print_lock);
 	//-----------------------------------------------------
 
-    int del_time = Tdellow + ((rand_r(&seed) * (Tdelhigh - Tdellow)) / RAND_MAX);
-    int pack_time = pizzas_ordered * Tpack;
-    sleep(pack_time);
-
     sleep(del_time);
-    clock_gettime(CLOCK_REALTIME, &finish);
-    sleep(del_time);
+    clock_gettime(CLOCK_REALTIME, &finish);//end of serving
+    
+    //calculating serving time-----------------------------
+    float T_serving_time_sec = finish.tv_sec - start_r.tv_sec;
+    //-----------------------------------------------------
+    
+    sleep(del_time);//the time the dispather need to return
+    
     // ignoring nanoseconds (considering we would potentially need to normalize
     // them and assuming no need for such accuracy)
     float T_cooling_time_sec = finish.tv_sec - start.tv_sec;
@@ -228,12 +229,6 @@ void *order(void *x){
     printf("Η παραγγελία με αριθμό %d παραδόθηκε σε %d λεπτά. \n", id,
            del_time);
     pthread_mutex_unlock(&print_lock);
-    
-    //-----------------------------------------------------
-    clock_gettime(CLOCK_REALTIME, &finish_s);//for serving time
-    
-    float T_serving_time_sec = finish_s.tv_sec - start_s.tv_sec;
-    //-----------------------------------------------------
 
     pthread_mutex_lock(&T_cooling_lock);
     T_cooling_sum += T_cooling_time_sec;
