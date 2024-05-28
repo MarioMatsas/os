@@ -89,7 +89,7 @@ void *order(void *x) {
         pthread_mutex_lock(&print_lock);	
         printf("Id %d waited.....%d\n", id, wait_time);
         pthread_mutex_unlock(&print_lock);
-        //sleep(wait_time);
+        sleep(wait_time);
     }
     pthread_mutex_unlock(&s_lock);
 
@@ -128,7 +128,7 @@ void *order(void *x) {
     pthread_mutex_lock(&print_lock);
     printf("Id %d waited...2..%d\n", id, wait_time);
     pthread_mutex_unlock(&print_lock);
-    //sleep(wait_time);
+    sleep(wait_time);
 
     // Payment may fail
     choice = 1 + rand_r(&seed) % 100;
@@ -185,7 +185,7 @@ void *order(void *x) {
 
     // Prepare pizzas
     wait_time = pizzas_ordered * Tprep;
-    //sleep(wait_time);
+    sleep(wait_time);
 
     // Once you get a cook, look for available ovens
     pthread_mutex_lock(&oven_lock);
@@ -203,7 +203,7 @@ void *order(void *x) {
 
     // Bake pizzas
     wait_time = pizzas_ordered * Tbake;
-    //sleep(wait_time);
+    sleep(wait_time);
 
     clock_gettime(CLOCK_REALTIME, &cold_start); // ----------------- COLD START
 
@@ -223,7 +223,7 @@ void *order(void *x) {
 
     // Pack the order
     wait_time = pizzas_ordered * Tpack;
-    //sleep(wait_time);
+    sleep(wait_time);
 
     clock_gettime(CLOCK_REALTIME, &order_end); // ----------------- ORDER END
 
@@ -236,7 +236,7 @@ void *order(void *x) {
 
     // Delivery time
     wait_time = Tdellow + rand_r(&seed) % (Tdelhigh - Tdellow + 1);
-    //sleep(wait_time);
+    sleep(wait_time);
 
     clock_gettime(CLOCK_REALTIME, &delivery_end); // ----------------- DELIVERY END
     clock_gettime(CLOCK_REALTIME, &overall_end); // ----------------- OVERALL END
@@ -266,7 +266,7 @@ void *order(void *x) {
     pthread_mutex_unlock(&print_lock);
 
     // Go back to the store
-    //sleep(wait_time);
+    sleep(wait_time);
 
     // Release delivery man
     pthread_mutex_lock(&dispatch_lock);
