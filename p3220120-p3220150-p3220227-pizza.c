@@ -51,7 +51,7 @@ int s = 0; //μεταβλητή, χρήσιμη για να μας πεί αν �
 void *order(void *x){
 
 //jim's addition---------------------------
-	int wait_time;
+    int wait_time;
 	//NOTE: start_s and finish_s are not needed, because start_s is the same as start_r and finish_s is the same as finish (will be defined later)
 	struct timespec start_r, finish_r;//to calculate the ready time
 //-----------------------------------------	
@@ -62,32 +62,32 @@ void *order(void *x){
     //---------------------------------------
 	
 	//tel part (jim part)------------------
-	
-	pthread_mutex_lock(&print_lock);
-	printf("Thread %d is ordering\n", id);
-	pthread_mutex_unlock(&print_lock);
+
+    pthread_mutex_lock(&print_lock);
+    printf("Thread %d is ordering\n", id);
+    pthread_mutex_unlock(&print_lock);
 	
 	// Wait for ordering, only after the zero seconds
-	
-	pthread_mutex_lock(&tel_lock);
-	if(!s){
-		s += 1;
+
+    pthread_mutex_lock(&tel_lock);
+    if(!s){
+        s += 1;
 	}
 	else{
-		wait_time = Torderlow + rand_r(&seed)%(Torderhigh - Torderlow - 1);
+        wait_time = Torderlow + rand_r(&seed)%(Torderhigh - Torderlow - 1);
 		sleep(wait_time);
 	}
-	pthread_mutex_unlock(&tel_lock);
+        pthread_mutex_unlock(&tel_lock);
 	
 	
 	// Check for available telephones, else wait
-	pthread_mutex_lock(&tel_lock);
-	while (N_tels == 0){
-		pthread_cond_wait(&tel_cond, &tel_lock);
-	}
-	N_tels--;
-	pthread_mutex_unlock(&tel_lock);
-	
+        pthread_mutex_lock(&tel_lock);
+    while (N_tels == 0){
+        pthread_cond_wait(&tel_cond, &tel_lock);
+    }
+    N_tels--;
+    pthread_mutex_unlock(&tel_lock);
+
 	//-------------------------------------
 	
 	int pizzas_ordered =
@@ -143,7 +143,7 @@ void *order(void *x){
     total_pepperonis_sold += pepperoni;
     total_specials_sold += special;
     pthread_mutex_unlock(&total_pizzas_lock);
-    
+
     //end of telephone----------------
     pthread_mutex_lock(&tel_lock);
     N_tels++;
@@ -173,11 +173,10 @@ void *order(void *x){
     N_cooks++;
     pthread_cond_signal(&cook_cond);
     pthread_mutex_unlock(&cook_lock);
-    pthread_mutex_unlock(&oven_lock);
 
     // Bake pizzas
     sleep(pizzas_ordered * Tbake);
-    
+
     struct timespec start, finish;  // needed for printing end stats, added by
                                     // ppdms, don't remove if refactoring
     clock_gettime(CLOCK_REALTIME, &start);  // same as above
@@ -193,20 +192,20 @@ void *order(void *x){
 
     pthread_mutex_lock(&oven_lock);
     N_oven += pizzas_ordered;
-    pthread_cond_signal(&oven_cond);
+    pthread_cond_broadcast(&oven_cond);
     pthread_mutex_unlock(&oven_lock);
 
     int del_time = Tdellow + ((rand_r(&seed) * (Tdelhigh - Tdellow)) / RAND_MAX);
     int pack_time = pizzas_ordered * Tpack;
     sleep(pack_time);
-    
+
     //order is ready-----------------------------------
     clock_gettime(CLOCK_REALTIME, &finish_r);
     //-------------------------------------------------
     //calculating the ready_time--------------------
-	int ready_time = finish_r.tv_sec - start_r.tv_sec;
-	
-	pthread_mutex_lock(&print_lock);
+    int ready_time = finish_r.tv_sec - start_r.tv_sec;
+
+    pthread_mutex_lock(&print_lock);
     printf("Η παραγγελία με αριθμό %d ετοιμάστηκε σε %d λεπτά. \n", id,
            ready_time);
     pthread_mutex_unlock(&print_lock);
@@ -214,7 +213,7 @@ void *order(void *x){
 
     sleep(del_time);
     clock_gettime(CLOCK_REALTIME, &finish);//end of serving
-    
+
     //calculating serving time-----------------------------
     float T_serving_time_sec = finish.tv_sec - start_r.tv_sec;
     //-----------------------------------------------------
@@ -235,7 +234,7 @@ void *order(void *x){
     T_cooling_N++;
     if (del_time > T_cooling_max) T_cooling_max = del_time;
     pthread_mutex_unlock(&T_cooling_lock);
-    
+
     pthread_mutex_lock(&T_serving_lock);//to calculate the serving time, sum , max and N
     T_serving_sum += T_serving_time_sec;
     T_serving_N++;
