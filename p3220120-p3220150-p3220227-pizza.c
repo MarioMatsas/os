@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "p3220120-p3220150-p3220227-pizza.h"
+
 pthread_mutex_t print_lock;
 pthread_mutex_t revenue_lock;
 pthread_mutex_t s_lock;
@@ -39,28 +41,10 @@ int cold_waiting_total = 0;
 
 int s = 0;
 
-int Ntel = 2; // Resources
-int Ncook = 2;
-int Noven = 10;
-int Ndeliverer = 10;
-int Torderlow = 1;
-int Torderhigh = 5;
-int Norderlow = 1;
-int Norderhigh = 5;
-int Pm = 35; // Chances of pizza being a margarita, pepperoni or special
-int Pp = 25;
-int Ps = 40;
-int Tpaymentlow = 1; // Payment time
-int Tpaymenthigh = 3;
-int Pfail = 5; // Chance of order to fail
-int Cm = 10; // Pizza cost according to type of pizza
-int Cp = 11;
-int Cs = 12;
-int Tprep = 1; // Prep, bake and pack time
-int Tbake = 10;
-int Tpack = 1;
-int Tdellow = 5; // Delivery times
-int Tdelhigh = 15;
+int N_tels = Ntel;
+int N_cooks = Ncook;
+int N_ovens = Noven;
+int N_deliverers = Ndeliverer;
 
 void *order(void *x) {
     int id = *(int *)x;
@@ -95,11 +79,11 @@ void *order(void *x) {
 
     // Get on the phone with the pizzaria
     pthread_mutex_lock(&tel_lock);
-    while (Ntel == 0) {
+    while (N_tels == 0) {
 		printf("Id %d waiting...\n", id);
         pthread_cond_wait(&tel_cond, &tel_lock);
     }
-    Ntel--;
+    N_tels--;
     pthread_mutex_unlock(&tel_lock);
 
     // Select a random number of pizzas to order
@@ -140,8 +124,8 @@ void *order(void *x) {
         printf("The transaction of %d has failed...\n", id);
         pthread_mutex_unlock(&print_lock);
 		pthread_mutex_lock(&tel_lock);
-		Ntel++;
-		printf("%d\n", Ntel);
+		N_tels++;
+		printf("%d\n", N_tels);
 		pthread_cond_broadcast(&tel_cond);
 		pthread_mutex_unlock(&tel_lock);
         pthread_exit(NULL);
@@ -168,7 +152,7 @@ void *order(void *x) {
 
     // Your order will be taken care of by the cook, so you disconnect the call
     pthread_mutex_lock(&tel_lock);
-    Ntel++;
+    N_tels++;
     pthread_cond_broadcast(&tel_cond);
 	pthread_mutex_unlock(&tel_lock);
     
@@ -177,10 +161,10 @@ void *order(void *x) {
 
     // Check for available cooks
     pthread_mutex_lock(&cook_lock);
-    while (Ncook == 0) {
+    while (N_cooks == 0) {
         pthread_cond_wait(&cook_cond, &cook_lock);
     }
-    Ncook--;
+    N_cooks--;
     pthread_mutex_unlock(&cook_lock);
 
     // Prepare pizzas
@@ -189,15 +173,15 @@ void *order(void *x) {
 
     // Once you get a cook, look for available ovens
     pthread_mutex_lock(&oven_lock);
-    while (Noven < pizzas_ordered) {
+    while (N_ovens < pizzas_ordered) {
         pthread_cond_wait(&oven_cond, &oven_lock);
     }
-    Noven -= pizzas_ordered;
+    N_ovens -= pizzas_ordered;
     pthread_mutex_unlock(&oven_lock);
 
     // Release cook
     pthread_mutex_lock(&cook_lock);
-    Ncook++;
+    N_cooks++;
     pthread_cond_signal(&cook_cond);
     pthread_mutex_unlock(&cook_lock);
 
@@ -209,15 +193,15 @@ void *order(void *x) {
 
     // After the pizzas are done we look for a delivery man
     pthread_mutex_lock(&dispatch_lock);
-    while (Ndeliverer == 0) {
+    while (N_deliverers == 0) {
         pthread_cond_wait(&dispatch_cond, &dispatch_lock);
     }
-    Ndeliverer--;
+    N_deliverers--;
     pthread_mutex_unlock(&dispatch_lock);
 
     // Release ovens
     pthread_mutex_lock(&oven_lock);
-    Noven += pizzas_ordered;
+    N_ovens += pizzas_ordered;
     pthread_cond_broadcast(&oven_cond);
     pthread_mutex_unlock(&oven_lock);
 
@@ -270,7 +254,7 @@ void *order(void *x) {
 
     // Release delivery man
     pthread_mutex_lock(&dispatch_lock);
-    Ndeliverer++;
+    N_deliverers++;
     pthread_cond_signal(&dispatch_cond);
     pthread_mutex_unlock(&dispatch_lock);
 
