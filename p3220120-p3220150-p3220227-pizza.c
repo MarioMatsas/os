@@ -1,14 +1,12 @@
+#include "p3220120-p3220150-p3220227-pizza.h"
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
 
-#include "p3220120-p3220150-p3220227-pizza.h"
-
 pthread_mutex_t print_lock;
 pthread_mutex_t revenue_lock;
-pthread_mutex_t s_lock;
 pthread_mutex_t tel_lock;
 pthread_cond_t tel_cond;
 pthread_mutex_t cook_lock;
@@ -38,8 +36,6 @@ int order_waiting_total = 0;
 int max_cold = 0;
 float average_cold = 0.0;
 int cold_waiting_total = 0;
-
-int s = 0;
 
 int N_tels = Ntel;
 int N_cooks = Ncook;
