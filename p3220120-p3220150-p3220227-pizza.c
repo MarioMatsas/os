@@ -48,7 +48,7 @@ int N_deliverers = Ndeliverer;
 
 void *order(void *x) {
     int id = *(int *)x;
-    int wait_time;
+    unsigned int wait_time;
     int rc;
 
     // Order timers
@@ -61,25 +61,6 @@ void *order(void *x) {
     struct timespec cold_start, cold_end;
 
     rc = clock_gettime(CLOCK_REALTIME, &overall_start); // ----------------- OVERALL START
-    if (rc != 0) { exit(-1); }
-
-
-    // The first customer (thread) doesn't wait, however every other one does
-    rc = pthread_mutex_lock(&s_lock);
-    if (rc != 0) { exit(-1); }
-    if (s == 0) {
-        s += 1;
-        //rc = pthread_mutex_lock(&print_lock);
-        //printf("Id %d skipped!\n", id);
-        //rc = pthread_mutex_unlock(&print_lock);
-    } else {
-        wait_time = Torderlow + rand_r(&seed) % (Torderhigh - Torderlow + 1);
-        //pthread_mutex_lock(&print_lock);	
-        //printf("Id %d waited.....%d\n", id, wait_time);
-        //pthread_mutex_unlock(&print_lock);
-        sleep(wait_time);
-    }
-    rc = pthread_mutex_unlock(&s_lock);
     if (rc != 0) { exit(-1); }
 
     // Get on the phone with the pizzaria
@@ -140,7 +121,7 @@ void *order(void *x) {
 		if (rc != 0) { exit(-1); }
 		N_tels++;
 		//printf("%d\n", N_tels);
-		rc = pthread_cond_broadcast(&tel_cond);
+		rc = pthread_cond_signal(&tel_cond);
 		if (rc != 0) { exit(-1); }
 		rc = pthread_mutex_unlock(&tel_lock);
 		if (rc != 0) { exit(-1); }
@@ -179,7 +160,7 @@ void *order(void *x) {
     rc = pthread_mutex_lock(&tel_lock);
     if (rc != 0) { exit(-1); }
     N_tels++;
-    rc = pthread_cond_broadcast(&tel_cond);
+    rc = pthread_cond_signal(&tel_cond);
     if (rc != 0) { exit(-1); }
 	rc = pthread_mutex_unlock(&tel_lock);
 	if (rc != 0) { exit(-1); }
@@ -223,9 +204,8 @@ void *order(void *x) {
     rc = pthread_mutex_unlock(&cook_lock);
     if (rc != 0) { exit(-1); }
 
-    // Bake pizzas
-    wait_time = pizzas_ordered * Tbake;
-    sleep(wait_time);
+    // Bake pizzas in parallel
+    sleep(Tbake);
 
     rc = clock_gettime(CLOCK_REALTIME, &cold_start); // ----------------- COLD START
     if (rc != 0) { exit(-1); }
@@ -370,14 +350,20 @@ int main(int argc, char *argv[]){
 
     for (int i = 0; i < Ncust; i++) {
         id[i] = i + 1;
-        rc = pthread_mutex_lock(&print_lock);
-        if (rc != 0) { return -1; }
+        pthread_mutex_lock(&print_lock);
         printf("Main: Thread %d has been created\n", id[i]);
-        rc = pthread_mutex_unlock(&print_lock);
-        if (rc != 0) { return -1; }
-
+        pthread_mutex_unlock(&print_lock);
+        // The first customer (thread) doesn't wait, however every other one
+        // does
+        if (i > 0) {
+            sleep((Torderlow + rand_r(&seed) % (Torderhigh - Torderlow + 1)));
+        }
         rc = pthread_create(&threads[i], NULL, order, &id[i]);
-        if (rc != 0) { return -1; }
+        if (rc != 0) {
+            free(id);
+            free(threads);
+            return -1;
+        }
     }
 
     for (int i = 0; i < Ncust; i++) {
