@@ -83,9 +83,9 @@ void *order(void *x) {
         // Select a random number for the percentage and depending on that, order one 
         // of the 3 options
         choice = 1 + rand_r(&seed) % 100;
-        if (choice <= Pm) {
+        if (choice <= 100*Pm) {
             margaritas++;
-        } else if (choice <= Pm + Pp) {
+        } else if (choice <= 100*(Pm + Pp)) {
             pepperoni++;
         } else {
             special++;
@@ -101,7 +101,7 @@ void *order(void *x) {
 
     // Payment may fail
     choice = 1 + rand_r(&seed) % 100;
-    if (choice <= Pfail) {
+    if (choice <= 100*Pfail) {
         rc = pthread_mutex_lock(&success_lock);
         if (rc != 0) { exit(-1); }
         unsuccessful++;
@@ -317,8 +317,6 @@ int main(int argc, char *argv[]){
     if (rc != 0) { return -1; }
     rc = pthread_mutex_init(&revenue_lock, NULL);
     if (rc != 0) { return -1; }
-    rc = pthread_mutex_init(&s_lock, NULL);
-    if (rc != 0) { return -1; }
     rc = pthread_mutex_init(&tel_lock, NULL);
     if (rc != 0) { return -1; }
     rc = pthread_cond_init(&tel_cond, NULL);
@@ -377,8 +375,6 @@ int main(int argc, char *argv[]){
     if (rc != 0) { return -1; }
     rc = pthread_mutex_destroy(&revenue_lock);
     if (rc != 0) { return -1; }
-    rc = pthread_mutex_destroy(&s_lock);
-    if (rc != 0) { return -1; }
     rc = pthread_mutex_destroy(&tel_lock);
     if (rc != 0) { return -1; }
     rc = pthread_cond_destroy(&tel_cond);
@@ -417,8 +413,8 @@ int main(int argc, char *argv[]){
     printf("Average service time: %.2f minutes\n", average_order);
     printf("Longest service time: %d minutes\n", max_order);
     printf("---------\n");
-    printf("Average colding time: %.2f minutes\n", average_cold);
-    printf("Longest colding time: %d minutes\n", max_cold);
+    printf("Average cooling time: %.2f minutes\n", average_cold);
+    printf("Longest cooling time: %d minutes\n", max_cold);
 
     free(id); // Free allocated memory
     free(threads);

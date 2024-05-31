@@ -6,12 +6,12 @@
 #define Torderhigh 5
 #define Norderlow 1 // Number of pizzas
 #define Norderhigh 5 
-#define Pm 35 // Chances of pizza being a margarita, pepperoni or special
-#define Pp 25
-#define Ps 40
+#define Pm 0.35 // Chances of pizza being a margarita, pepperoni or special
+#define Pp 0.25
+#define Ps 0.40
 #define Tpaymentlow 1 // Payment time
 #define Tpaymenthigh 3
-#define Pfail 5 // Chance of order to fail
+#define Pfail 0.05 // Chance of order to fail
 #define Cm 10 // Pizza cost according to type of pizza
 #define Cp 11
 #define Cs 12
